@@ -137,43 +137,134 @@ namespace InventoryManagementBST {
 
             void Delete(int id)
             {
-                Root = DeleteRec(Root, id);
+                Root = DeleteIter(Root, id);
             }
 
             //delete from BST
-            BSTNode^ DeleteRec(BSTNode^ root, int id)
+            //BSTNode^ DeleteRec(BSTNode^ root, int id)
+            //{
+            //    if (root == nullptr) return root;
+
+            //    //find the node
+            //    if (id < root->Item->InventoryId)
+            //        root->Left = DeleteRec(root->Left, id);
+            //    else if (id > root->Item->InventoryId)
+            //        root->Right = DeleteRec(root->Right, id);
+            //    //node is found
+            //    else
+            //    {
+            //        //if only one child node is found
+            //        if (root->Left == nullptr)
+            //        {
+            //            BSTNode^ temp = root->Right;
+            //            delete root;
+            //            return temp;
+            //        }
+            //        else if (root->Right == nullptr)
+            //        {
+            //            BSTNode^ temp = root->Left;
+            //            delete root;
+            //            return temp;
+            //        }
+
+            //        //if 2 child node, take smallest value in right subtree
+            //        BSTNode^ temp = MinValueNode(root->Right);
+            //        root->Item = temp->Item;
+            //        root->Right = DeleteRec(root->Right, temp->Item->InventoryId);
+            //    }
+            //    return root;
+            //}
+
+            BSTNode^ DeleteIter(BSTNode^ root, int id)
             {
-                if (root == nullptr) return root;
+                BSTNode^ parent = nullptr;
+                BSTNode^ current = root;
 
-                //find the node
-                if (id < root->Item->InventoryId)
-                    root->Left = DeleteRec(root->Left, id);
-                else if (id > root->Item->InventoryId)
-                    root->Right = DeleteRec(root->Right, id);
-                //node is found
-                else
+                while (current != nullptr)
                 {
-                    //if only one child node is found
-                    if (root->Left == nullptr)
+                    if (id < current->Item->InventoryId)
                     {
-                        BSTNode^ temp = root->Right;
-                        delete root;
-                        return temp;
+                        parent = current;
+                        current = current->Left;
                     }
-                    else if (root->Right == nullptr)
+                    else if (id > current->Item->InventoryId)
                     {
-                        BSTNode^ temp = root->Left;
-                        delete root;
-                        return temp;
+                        parent = current;
+                        current = current->Right;
                     }
+                    else
+                    {
+                        // Node found
+                        // Case 1: Node has no children (leaf node)
+                        if (current->Left == nullptr && current->Right == nullptr)
+                        {
+                            if (parent == nullptr)
+                            {
+                                root = nullptr;  // if root node is to be deleted
+                            }
+                            else if (parent->Left == current)
+                            {
+                                parent->Left = nullptr;
+                            }
+                            else
+                            {
+                                parent->Right = nullptr;
+                            }
+                            delete current;
+                            return root;
+                        }
+                        // Case 2: Node has one child
+                        else if (current->Left == nullptr || current->Right == nullptr)
+                        {
+                            BSTNode^ temp = (current->Left != nullptr) ? current->Left : current->Right;
+                            if (parent == nullptr)
+                            {
+                                root = temp;  // if root node is to be deleted
+                            }
+                            else if (parent->Left == current)
+                            {
+                                parent->Left = temp;
+                            }
+                            else
+                            {
+                                parent->Right = temp;
+                            }
+                            delete current;
+                            return root;
+                        }
+                        // Case 3: Node has two children
+                        else
+                        {
+                            // Find the smallest node in the right subtree
+                            BSTNode^ tempParent = current;
+                            BSTNode^ temp = current->Right;
+                            while (temp->Left != nullptr)
+                            {
+                                tempParent = temp;
+                                temp = temp->Left;
+                            }
 
-                    //if 2 child node, take smallest value in right subtree
-                    BSTNode^ temp = MinValueNode(root->Right);
-                    root->Item = temp->Item;
-                    root->Right = DeleteRec(root->Right, temp->Item->InventoryId);
+                            // Replace current node with temp
+                            current->Item = temp->Item;
+
+                            // Delete the inorder successor (which is the node we replaced with)
+                            if (tempParent->Left == temp)
+                            {
+                                tempParent->Left = temp->Right;
+                            }
+                            else
+                            {
+                                tempParent->Right = temp->Right;
+                            }
+                            delete temp;
+                            return root;
+                        }
+                    }
                 }
-                return root;
+
+                return root;  // return unchanged root if item not found
             }
+
 
             //find the right subtree smallest node (in-order successor)
             BSTNode^ MinValueNode(BSTNode^ node)
@@ -194,6 +285,7 @@ namespace InventoryManagementBST {
                     InOrderTraversal(node->Right, items);
                 }
             }
+
         };
 #pragma endregion
 
@@ -213,11 +305,22 @@ namespace InventoryManagementBST {
         System::Windows::Forms::DataGridView^ inventoryGridView;
 
         System::ComponentModel::Container^ components;
-        System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn1;
-        System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn2;
-        System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn3;
-        System::Windows::Forms::DataGridViewButtonColumn^ Action;
-        System::Windows::Forms::DataGridViewButtonColumn^ Delete;
+private: System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn1;
+private: System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn2;
+private: System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn3;
+private: System::Windows::Forms::DataGridViewButtonColumn^ Action;
+private: System::Windows::Forms::DataGridViewButtonColumn^ Delete;
+private: System::Windows::Forms::Label^ label1;
+
+
+
+
+
+
+
+
+
+
 
         // Local inventory data (BST)
         InventoryBST^ inventoryBST = gcnew InventoryBST();
@@ -235,6 +338,7 @@ namespace InventoryManagementBST {
             this->dataGridViewTextBoxColumn3 = (gcnew System::Windows::Forms::DataGridViewTextBoxColumn());
             this->Action = (gcnew System::Windows::Forms::DataGridViewButtonColumn());
             this->Delete = (gcnew System::Windows::Forms::DataGridViewButtonColumn());
+            this->label1 = (gcnew System::Windows::Forms::Label());
             (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->inventoryGridView))->BeginInit();
             this->SuspendLayout();
             // 
@@ -250,9 +354,9 @@ namespace InventoryManagementBST {
             // 
             // inputTextBox
             // 
-            this->inputTextBox->Location = System::Drawing::Point(140, 25);
+            this->inputTextBox->Location = System::Drawing::Point(195, 26);
             this->inputTextBox->Name = L"inputTextBox";
-            this->inputTextBox->Size = System::Drawing::Size(300, 20);
+            this->inputTextBox->Size = System::Drawing::Size(283, 20);
             this->inputTextBox->TabIndex = 1;
             // 
             // inventoryGridView
@@ -289,18 +393,30 @@ namespace InventoryManagementBST {
             this->Action->HeaderText = L"Update";
             this->Action->Name = L"Action";
             this->Action->Text = L"Update";
+            this->Action->ToolTipText = L"Update";
             // 
             // Delete
             // 
             this->Delete->HeaderText = L"Delete";
             this->Delete->Name = L"Delete";
             this->Delete->Text = L"Delete";
+            this->Delete->ToolTipText = L"Delete";
+            // 
+            // label1
+            // 
+            this->label1->AutoSize = true;
+            this->label1->Location = System::Drawing::Point(126, 29);
+            this->label1->Name = L"label1";
+            this->label1->Size = System::Drawing::Size(63, 13);
+            this->label1->TabIndex = 3;
+            this->label1->Text = L"Inventory Id";
             // 
             // MyForm
             // 
             this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
             this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
             this->ClientSize = System::Drawing::Size(857, 628);
+            this->Controls->Add(this->label1);
             this->Controls->Add(this->searchAllButton);
             this->Controls->Add(this->inputTextBox);
             this->Controls->Add(this->inventoryGridView);
@@ -318,7 +434,7 @@ namespace InventoryManagementBST {
         // Load data from JSON file into BST
         void LoadDataFromJson()
         {
-            std::ifstream file("1000inventory.json");
+            std::ifstream file("100inventory.json");
             if (!file.is_open())
             {
                 MessageBox::Show("Unable to open JSON file.");
@@ -351,7 +467,7 @@ namespace InventoryManagementBST {
             inventoryBST->InOrderTraversal(inventoryBST->Root, items);
 
             stopwatch->Stop();
-            String^ elapsedTime = String::Format("Search All Operation completed in {0:F4} milliseconds.", (double)(stopwatch->ElapsedTicks/1000));
+            String^ elapsedTime = String::Format("Search All Operation completed in {0} ticks (1 milliseconds = 1000 ticks).", (double)stopwatch->ElapsedTicks);
 
             this->inventoryGridView->Rows->Clear();
             for each (InventoryItem ^ item in items)
@@ -377,7 +493,7 @@ namespace InventoryManagementBST {
                     InventoryItem^ item = inventoryBST->Search(searchId);
 
                     stopwatch->Stop();
-                    String^ elapsedTime = String::Format("Search Operation completed in {0:F4} milliseconds.", (stopwatch->ElapsedTicks/1000));
+                    String^ elapsedTime = String::Format("Search Operation completed in {0} ticks (1 milliseconds = 1000 ticks).", stopwatch->ElapsedTicks);
 
                     if (item != nullptr)
                     {
@@ -450,7 +566,7 @@ namespace InventoryManagementBST {
                 inventoryBST->Insert(newItem);
 
                 stopwatch->Stop();
-                String^ elapsedTime = String::Format("Insert Operation completed in {0:F4} milliseconds.", (stopwatch->ElapsedTicks/1000));
+                String^ elapsedTime = String::Format("Insert Operation completed in {0} ticks (1 milliseconds = 1000 ticks).", stopwatch->ElapsedTicks);
 
                 MessageBox::Show("New inventory item inserted successfully!\n" + elapsedTime);
                 PopulateGridView();
@@ -463,7 +579,7 @@ namespace InventoryManagementBST {
                     item->Quantity = quantity;
 
                     stopwatch->Stop();
-                    String^ elapsedTime = String::Format("Update Operation completed in {0:F4} milliseconds.", (stopwatch->ElapsedTicks/1000));
+                    String^ elapsedTime = String::Format("Update Operation completed in {0} ticks (1 milliseconds = 1000 ticks).", stopwatch->ElapsedTicks);
 
                     MessageBox::Show("Inventory updated successfully!\n" + elapsedTime);
                     PopulateGridView();
@@ -501,5 +617,5 @@ namespace InventoryManagementBST {
             return node->Item->InventoryId;  // Return the inventoryId of the rightmost node
         }
 #pragma endregion
-    };
+};
 }
