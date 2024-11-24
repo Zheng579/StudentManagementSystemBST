@@ -61,18 +61,56 @@ namespace InventoryManagementBST {
 
             void Insert(InventoryItem^ item)
             {
-                Root = InsertRec(Root, item);
+                Root = InsertIter(Root, item);
             }
 
-            BSTNode^ InsertRec(BSTNode^ root, InventoryItem^ item)
+            //insert new item //hit stack overflow issues when using 10000 record
+            //BSTNode^ InsertRec(BSTNode^ root, InventoryItem^ item)
+            //{
+            //    //if no root
+            //    if (root == nullptr)
+            //        return gcnew BSTNode(item);
+
+            //    //find the inserted invId
+            //    if (item->InventoryId < root->Item->InventoryId)
+            //        root->Left = InsertRec(root->Left, item);
+            //    else if (item->InventoryId > root->Item->InventoryId)
+            //        root->Right = InsertRec(root->Right, item);
+
+            //    return root;
+            //}
+
+            //new insert to prevent iterative issue  avoids recursion and prevents stack overflow issues
+            BSTNode^ InsertIter(BSTNode^ root, InventoryItem^ item)
             {
+                // If the tree is empty, return a new node
                 if (root == nullptr)
                     return gcnew BSTNode(item);
 
-                if (item->InventoryId < root->Item->InventoryId)
-                    root->Left = InsertRec(root->Left, item);
-                else if (item->InventoryId > root->Item->InventoryId)
-                    root->Right = InsertRec(root->Right, item);
+                BSTNode^ current = root;
+                BSTNode^ parent = nullptr;
+
+                // Traverse the tree iteratively
+                while (current != nullptr)
+                {
+                    parent = current;
+
+                    // If the item to insert has a smaller InventoryId, go to the left subtree
+                    if (item->InventoryId < current->Item->InventoryId)
+                        current = current->Left;
+                    // If the item to insert has a larger InventoryId, go to the right subtree
+                    else if (item->InventoryId > current->Item->InventoryId)
+                        current = current->Right;
+                    // If the item already exists, we do nothing (or could handle duplicates)
+                    else
+                        return root;
+                }
+
+                // Now we have found the appropriate position for insertion
+                if (item->InventoryId < parent->Item->InventoryId)
+                    parent->Left = gcnew BSTNode(item);
+                else
+                    parent->Right = gcnew BSTNode(item);
 
                 return root;
             }
@@ -82,14 +120,18 @@ namespace InventoryManagementBST {
                 return SearchRec(Root, id);
             }
 
+            //search BST with inventoryId
             InventoryItem^ SearchRec(BSTNode^ root, int id)
             {
+                //if found item
                 if (root == nullptr || root->Item->InventoryId == id)
                     return root != nullptr ? root->Item : nullptr;
 
+                //if id < rootid, go to left and continue
                 if (id < root->Item->InventoryId)
                     return SearchRec(root->Left, id);
 
+                //if id > rootid, go to right and continue
                 return SearchRec(root->Right, id);
             }
 
@@ -98,16 +140,20 @@ namespace InventoryManagementBST {
                 Root = DeleteRec(Root, id);
             }
 
+            //delete from BST
             BSTNode^ DeleteRec(BSTNode^ root, int id)
             {
                 if (root == nullptr) return root;
 
+                //find the node
                 if (id < root->Item->InventoryId)
                     root->Left = DeleteRec(root->Left, id);
                 else if (id > root->Item->InventoryId)
                     root->Right = DeleteRec(root->Right, id);
+                //node is found
                 else
                 {
+                    //if only one child node is found
                     if (root->Left == nullptr)
                     {
                         BSTNode^ temp = root->Right;
@@ -121,6 +167,7 @@ namespace InventoryManagementBST {
                         return temp;
                     }
 
+                    //if 2 child node, take smallest value in right subtree
                     BSTNode^ temp = MinValueNode(root->Right);
                     root->Item = temp->Item;
                     root->Right = DeleteRec(root->Right, temp->Item->InventoryId);
@@ -128,6 +175,7 @@ namespace InventoryManagementBST {
                 return root;
             }
 
+            //find the right subtree smallest node (in-order successor)
             BSTNode^ MinValueNode(BSTNode^ node)
             {
                 BSTNode^ current = node;
@@ -136,6 +184,7 @@ namespace InventoryManagementBST {
                 return current;
             }
 
+            //Retrieve All the data (process left subtree then right subtree)
             void InOrderTraversal(BSTNode^ node, System::Collections::Generic::List<InventoryItem^>^% items)
             {
                 if (node != nullptr)
@@ -144,12 +193,6 @@ namespace InventoryManagementBST {
                     items->Add(node->Item);
                     InOrderTraversal(node->Right, items);
                 }
-            }
-            
-            // Method to check if the BST is empty
-            bool IsEmpty()
-            {
-                return Root == nullptr;
             }
         };
 #pragma endregion
@@ -275,7 +318,7 @@ namespace InventoryManagementBST {
         // Load data from JSON file into BST
         void LoadDataFromJson()
         {
-            std::ifstream file("inventory.json");
+            std::ifstream file("1000inventory.json");
             if (!file.is_open())
             {
                 MessageBox::Show("Unable to open JSON file.");
@@ -293,6 +336,7 @@ namespace InventoryManagementBST {
 
                 InventoryItem^ newItem = gcnew InventoryItem(id, description, quantity);
                 inventoryBST->Insert(newItem);
+                newItem = nullptr;
             }
             //PopulateGridView();
             file.close();
@@ -307,7 +351,7 @@ namespace InventoryManagementBST {
             inventoryBST->InOrderTraversal(inventoryBST->Root, items);
 
             stopwatch->Stop();
-            String^ elapsedTime = String::Format("Search All Operation completed in {0} milliseconds.", stopwatch->ElapsedMilliseconds);
+            String^ elapsedTime = String::Format("Search All Operation completed in {0:F4} milliseconds.", (double)(stopwatch->ElapsedTicks/1000));
 
             this->inventoryGridView->Rows->Clear();
             for each (InventoryItem ^ item in items)
@@ -315,7 +359,6 @@ namespace InventoryManagementBST {
                 this->inventoryGridView->Rows->Add(item->InventoryId, item->Description, item->Quantity);
             }
             MessageBox::Show("Inventory retrieved all successfully!\n" + elapsedTime);
-
         }
 #pragma endregion
 
@@ -331,11 +374,10 @@ namespace InventoryManagementBST {
                 if (Int32::TryParse(searchText, searchId))
                 {
                     System::Diagnostics::Stopwatch^ stopwatch = System::Diagnostics::Stopwatch::StartNew();
-
                     InventoryItem^ item = inventoryBST->Search(searchId);
 
                     stopwatch->Stop();
-                    String^ elapsedTime = String::Format("Search Operation completed in {0} milliseconds.", stopwatch->ElapsedMilliseconds);
+                    String^ elapsedTime = String::Format("Search Operation completed in {0:F4} milliseconds.", (stopwatch->ElapsedTicks/1000));
 
                     if (item != nullptr)
                     {
@@ -392,7 +434,6 @@ namespace InventoryManagementBST {
         void UpdateInventoryData(int inventoryId, String^ description, int quantity)
         {
             System::Diagnostics::Stopwatch^ stopwatch = System::Diagnostics::Stopwatch::StartNew();
-
             // Check if inventoryId is 0, in which case we perform an insert
             if (inventoryId == 0)
             {
@@ -409,10 +450,10 @@ namespace InventoryManagementBST {
                 inventoryBST->Insert(newItem);
 
                 stopwatch->Stop();
-                String^ elapsedTime = String::Format("Insert Operation completed in {0} milliseconds.", stopwatch->ElapsedMilliseconds);
+                String^ elapsedTime = String::Format("Insert Operation completed in {0:F4} milliseconds.", (stopwatch->ElapsedTicks/1000));
 
-                PopulateGridView();
                 MessageBox::Show("New inventory item inserted successfully!\n" + elapsedTime);
+                PopulateGridView();
             }
             else {
                 InventoryItem^ item = inventoryBST->Search(inventoryId);
@@ -422,10 +463,10 @@ namespace InventoryManagementBST {
                     item->Quantity = quantity;
 
                     stopwatch->Stop();
-                    String^ elapsedTime = String::Format("Update Operation completed in {0} milliseconds.", stopwatch->ElapsedMilliseconds);
+                    String^ elapsedTime = String::Format("Update Operation completed in {0:F4} milliseconds.", (stopwatch->ElapsedTicks/1000));
 
-                    PopulateGridView();
                     MessageBox::Show("Inventory updated successfully!\n" + elapsedTime);
+                    PopulateGridView();
                 }
                 else
                 {
