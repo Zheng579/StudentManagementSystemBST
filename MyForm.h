@@ -18,7 +18,7 @@ namespace InventoryManagementBST {
         MyForm(void)
         {
             InitializeComponent();
-            //load data from Json;
+            // Load data from Json;
             LoadDataFromJson();
         }
 #pragma region InventoryItem Class
@@ -34,6 +34,122 @@ namespace InventoryManagementBST {
                 InventoryId = id;
                 Description = desc;
                 Quantity = qty;
+            }
+        };
+
+        ref class BSTNode
+        {
+        public:
+            InventoryItem^ Item;
+            BSTNode^ Left;
+            BSTNode^ Right;
+
+            BSTNode(InventoryItem^ item)
+            {
+                Item = item;
+                Left = nullptr;
+                Right = nullptr;
+            }
+        };
+
+        ref class InventoryBST
+        {
+        public:
+            BSTNode^ Root;
+
+            InventoryBST() { Root = nullptr; }
+
+            void Insert(InventoryItem^ item)
+            {
+                Root = InsertRec(Root, item);
+            }
+
+            BSTNode^ InsertRec(BSTNode^ root, InventoryItem^ item)
+            {
+                if (root == nullptr)
+                    return gcnew BSTNode(item);
+
+                if (item->InventoryId < root->Item->InventoryId)
+                    root->Left = InsertRec(root->Left, item);
+                else if (item->InventoryId > root->Item->InventoryId)
+                    root->Right = InsertRec(root->Right, item);
+
+                return root;
+            }
+
+            InventoryItem^ Search(int id)
+            {
+                return SearchRec(Root, id);
+            }
+
+            InventoryItem^ SearchRec(BSTNode^ root, int id)
+            {
+                if (root == nullptr || root->Item->InventoryId == id)
+                    return root != nullptr ? root->Item : nullptr;
+
+                if (id < root->Item->InventoryId)
+                    return SearchRec(root->Left, id);
+
+                return SearchRec(root->Right, id);
+            }
+
+            void Delete(int id)
+            {
+                Root = DeleteRec(Root, id);
+            }
+
+            BSTNode^ DeleteRec(BSTNode^ root, int id)
+            {
+                if (root == nullptr) return root;
+
+                if (id < root->Item->InventoryId)
+                    root->Left = DeleteRec(root->Left, id);
+                else if (id > root->Item->InventoryId)
+                    root->Right = DeleteRec(root->Right, id);
+                else
+                {
+                    if (root->Left == nullptr)
+                    {
+                        BSTNode^ temp = root->Right;
+                        delete root;
+                        return temp;
+                    }
+                    else if (root->Right == nullptr)
+                    {
+                        BSTNode^ temp = root->Left;
+                        delete root;
+                        return temp;
+                    }
+
+                    BSTNode^ temp = MinValueNode(root->Right);
+                    root->Item = temp->Item;
+                    root->Right = DeleteRec(root->Right, temp->Item->InventoryId);
+                }
+                return root;
+            }
+
+            BSTNode^ MinValueNode(BSTNode^ node)
+            {
+                BSTNode^ current = node;
+                while (current && current->Left != nullptr)
+                    current = current->Left;
+                return current;
+            }
+
+            void InOrderTraversal(BSTNode^ node, System::Collections::Generic::List<InventoryItem^>^% items)
+            {
+                if (node != nullptr)
+                {
+                    InOrderTraversal(node->Left, items);
+                    items->Add(node->Item);
+                    InOrderTraversal(node->Right, items);
+                }
+            }
+            
+            // Method to check if the BST is empty
+            bool IsEmpty()
+            {
+                return Root == nullptr;
             }
         };
 #pragma endregion
@@ -60,8 +176,8 @@ namespace InventoryManagementBST {
         System::Windows::Forms::DataGridViewButtonColumn^ Action;
         System::Windows::Forms::DataGridViewButtonColumn^ Delete;
 
-        // Local inventory data
-        System::Collections::Generic::List<InventoryItem^>^ inventoryList = gcnew System::Collections::Generic::List<InventoryItem^>();
+        // Local inventory data (BST)
+        InventoryBST^ inventoryBST = gcnew InventoryBST();
 #pragma endregion
 
 #pragma region Windows Form Designer generated code
@@ -156,7 +272,7 @@ namespace InventoryManagementBST {
 
     private:
 #pragma region Load From Json
-        //Initialized data: Load data from JSON
+        // Load data from JSON file into BST
         void LoadDataFromJson()
         {
             std::ifstream file("inventory.json");
@@ -175,21 +291,31 @@ namespace InventoryManagementBST {
                 String^ description = gcnew String(item["Description"].get<std::string>().c_str());
                 int quantity = item["Quantity"];
 
-                inventoryList->Add(gcnew InventoryItem(id, description, quantity));
+                InventoryItem^ newItem = gcnew InventoryItem(id, description, quantity);
+                inventoryBST->Insert(newItem);
             }
-            PopulateGridView();
+            //PopulateGridView();
             file.close();
         }
 
-
-        // Populate DataGridView
+        // Populate DataGridView by traversing BST in order
         void PopulateGridView()
         {
+            System::Collections::Generic::List<InventoryItem^>^ items = gcnew System::Collections::Generic::List<InventoryItem^>();
+            System::Diagnostics::Stopwatch^ stopwatch = System::Diagnostics::Stopwatch::StartNew();
+
+            inventoryBST->InOrderTraversal(inventoryBST->Root, items);
+
+            stopwatch->Stop();
+            String^ elapsedTime = String::Format("Search All Operation completed in {0} milliseconds.", stopwatch->ElapsedMilliseconds);
+
             this->inventoryGridView->Rows->Clear();
-            for each (InventoryItem ^ item in inventoryList)
+            for each (InventoryItem ^ item in items)
             {
                 this->inventoryGridView->Rows->Add(item->InventoryId, item->Description, item->Quantity);
             }
+            MessageBox::Show("Inventory retrieved all successfully!\n" + elapsedTime);
+
         }
 #pragma endregion
 
@@ -197,103 +323,141 @@ namespace InventoryManagementBST {
         // Handle "Search All" button click
         void SearchAllButton_Click(System::Object^ sender, System::EventArgs^ e)
         {
-            String^ searchText = inputTextBox->Text->Trim(); // Get the input text and remove any leading/trailing whitespace
+            String^ searchText = inputTextBox->Text->Trim();
 
             if (!String::IsNullOrEmpty(searchText))
             {
-                // Filter the inventory list based on the input value (InventoryId)
                 int searchId;
-                if (Int32::TryParse(searchText, searchId)) // Try to parse the input as an integer
+                if (Int32::TryParse(searchText, searchId))
                 {
-                    System::Collections::Generic::List<InventoryItem^>^ filteredList = gcnew System::Collections::Generic::List<InventoryItem^>();
-                    for each (InventoryItem ^ item in inventoryList)
+                    System::Diagnostics::Stopwatch^ stopwatch = System::Diagnostics::Stopwatch::StartNew();
+
+                    InventoryItem^ item = inventoryBST->Search(searchId);
+
+                    stopwatch->Stop();
+                    String^ elapsedTime = String::Format("Search Operation completed in {0} milliseconds.", stopwatch->ElapsedMilliseconds);
+
+                    if (item != nullptr)
                     {
-                        if (item->InventoryId == searchId) // Match InventoryId
-                        {
-                            filteredList->Add(item);
-                        }
+                        // Display search result in the DataGridView
+                        inventoryGridView->Rows->Clear();
+                        inventoryGridView->Rows->Add(item->InventoryId, item->Description, item->Quantity);
+                        MessageBox::Show("Inventory retrieved successfully!\n" + elapsedTime);
+
                     }
-                    inventoryList = filteredList; // Update the list with the filtered results
+                    else
+                    {
+                        stopwatch->Stop();
+                        MessageBox::Show("Item not found.");
+                    }
                 }
                 else
                 {
                     MessageBox::Show("Please enter a valid Inventory Id.");
-                    return; // Return if input is not a valid number
                 }
+            }
+            else {
+                PopulateGridView();
             }
         }
 
         // Handle update and delete actions
         void InventoryGridView_CellContentClick(System::Object^ sender, System::Windows::Forms::DataGridViewCellEventArgs^ e)
         {
-            if (e->RowIndex >= 0) // Ensure valid row index
+            if (e->RowIndex >= 0)
             {
                 switch (e->ColumnIndex)
                 {
-                    case 3: // Update button column
-                    {
-                        int inventoryId = Convert::ToInt32(this->inventoryGridView->Rows[e->RowIndex]->Cells[0]->Value);
-                        String^ description = this->inventoryGridView->Rows[e->RowIndex]->Cells[1]->Value->ToString();
-                        int quantity = Convert::ToInt32(this->inventoryGridView->Rows[e->RowIndex]->Cells[2]->Value);
-
-                        // Update the inventory directly within the list
-                        UpdateInventoryData(inventoryId, description, quantity);
-                        break;
-                    }
-                    case 4: // Delete button column
-                    {
-                        int inventoryId = Convert::ToInt32(this->inventoryGridView->Rows[e->RowIndex]->Cells[0]->Value);
-                        DeleteInventoryData(inventoryId);
-                        break;
-                    }
-                    default:
-                        // Optional: Handle other cases or do nothing
-                        break;
-                }
-            }
-        }
-
-        // Update inventory data directly in the list
-        void UpdateInventoryData(int inventoryId, String^ description, int quantity)
-        {
-            //add new record if no inventoryId
-            if (inventoryId == 0) {
-                InventoryItem^ lastItem = inventoryList[inventoryList->Count - 1];
-                int newId = lastItem->InventoryId + 1;  // Assuming 'ID' is a public property of 'item'
-
-                inventoryList->Add(gcnew InventoryItem(newId, description, quantity));
-            }
-            //update record if inventoryId exists
-            else {
-                for each (InventoryItem ^ item in inventoryList)
+                case 3: // Update button column
                 {
-                    if (item->InventoryId == inventoryId)
-                    {
-                        item->Description = description;
-                        item->Quantity = quantity;
-                        break;
-                    }
-                }
-            }
+                    int inventoryId = Convert::ToInt32(this->inventoryGridView->Rows[e->RowIndex]->Cells[0]->Value);
+                    String^ description = this->inventoryGridView->Rows[e->RowIndex]->Cells[1]->Value->ToString();
+                    int quantity = Convert::ToInt32(this->inventoryGridView->Rows[e->RowIndex]->Cells[2]->Value);
 
-            PopulateGridView(); // Refresh the grid view with updated data
-            MessageBox::Show("Inventory updated successfully!"); // Show success message
-        }
-
-        // Delete inventory data
-        void DeleteInventoryData(int inventoryId)
-        {
-            for (int i = 0; i < inventoryList->Count; i++)
-            {
-                if (inventoryList[i]->InventoryId == inventoryId)
-                {
-                    inventoryList->RemoveAt(i);
+                    // Update the inventory
+                    UpdateInventoryData(inventoryId, description, quantity);
                     break;
                 }
+                case 4: // Delete button column
+                {
+                    int inventoryId = Convert::ToInt32(this->inventoryGridView->Rows[e->RowIndex]->Cells[0]->Value);
+                    DeleteInventoryData(inventoryId);
+                    break;
+                }
+                }
             }
+        }
 
+        // Update inventory data in the BST
+        void UpdateInventoryData(int inventoryId, String^ description, int quantity)
+        {
+            System::Diagnostics::Stopwatch^ stopwatch = System::Diagnostics::Stopwatch::StartNew();
+
+            // Check if inventoryId is 0, in which case we perform an insert
+            if (inventoryId == 0)
+            {
+                // Find the maximum inventoryId in the BST
+                int maxInventoryId = FindMaxInventoryId(inventoryBST->Root);
+
+                // Generate a new inventoryId as maxInventoryId + 1
+                inventoryId = maxInventoryId + 1;
+
+                // Create a new InventoryItem with the new inventoryId
+                InventoryItem^ newItem = gcnew InventoryItem(inventoryId, description, quantity);
+
+                // Insert the new item into the BST
+                inventoryBST->Insert(newItem);
+
+                stopwatch->Stop();
+                String^ elapsedTime = String::Format("Insert Operation completed in {0} milliseconds.", stopwatch->ElapsedMilliseconds);
+
+                PopulateGridView();
+                MessageBox::Show("New inventory item inserted successfully!\n" + elapsedTime);
+            }
+            else {
+                InventoryItem^ item = inventoryBST->Search(inventoryId);
+                if (item != nullptr)
+                {
+                    item->Description = description;
+                    item->Quantity = quantity;
+
+                    stopwatch->Stop();
+                    String^ elapsedTime = String::Format("Update Operation completed in {0} milliseconds.", stopwatch->ElapsedMilliseconds);
+
+                    PopulateGridView();
+                    MessageBox::Show("Inventory updated successfully!\n" + elapsedTime);
+                }
+                else
+                {
+                    stopwatch->Stop();
+                    MessageBox::Show("Item not found for update.");
+                }
+            }
+        }
+
+        // Delete inventory data from the BST
+        void DeleteInventoryData(int inventoryId)
+        {
+            inventoryBST->Delete(inventoryId);
             PopulateGridView();
             MessageBox::Show("Inventory deleted successfully!");
+        }
+#pragma endregion
+
+#pragma region Helper
+        // Helper function to find the maximum inventoryId in the BST
+        int FindMaxInventoryId(BSTNode^ node)
+        {
+            // Traverse to the rightmost node to find the maximum inventoryId
+            if (node == nullptr)
+            {
+                return 0;  // Return 0 if the tree is empty
+            }
+            while (node->Right != nullptr)
+            {
+                node = node->Right;
+            }
+            return node->Item->InventoryId;  // Return the inventoryId of the rightmost node
         }
 #pragma endregion
     };
