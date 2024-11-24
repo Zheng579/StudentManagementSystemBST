@@ -18,6 +18,7 @@ namespace InventoryManagementBST {
         MyForm(void)
         {
             InitializeComponent();
+            //load data from Json;
             LoadDataFromJson();
         }
 #pragma region InventoryItem Class
@@ -37,6 +38,7 @@ namespace InventoryManagementBST {
         };
 #pragma endregion
 
+#pragma region End Initialized UI
     protected:
         ~MyForm()
         {
@@ -60,6 +62,7 @@ namespace InventoryManagementBST {
 
         // Local inventory data
         System::Collections::Generic::List<InventoryItem^>^ inventoryList = gcnew System::Collections::Generic::List<InventoryItem^>();
+#pragma endregion
 
 #pragma region Windows Form Designer generated code
     public:
@@ -152,7 +155,8 @@ namespace InventoryManagementBST {
 #pragma endregion
 
     private:
-        // Load data from JSON
+#pragma region Load From Json
+        //Initialized data: Load data from JSON
         void LoadDataFromJson()
         {
             std::ifstream file("inventory.json");
@@ -187,7 +191,9 @@ namespace InventoryManagementBST {
                 this->inventoryGridView->Rows->Add(item->InventoryId, item->Description, item->Quantity);
             }
         }
+#pragma endregion
 
+#pragma region CRUD
         // Handle "Search All" button click
         void SearchAllButton_Click(System::Object^ sender, System::EventArgs^ e)
         {
@@ -250,12 +256,14 @@ namespace InventoryManagementBST {
         // Update inventory data directly in the list
         void UpdateInventoryData(int inventoryId, String^ description, int quantity)
         {
+            //add new record if no inventoryId
             if (inventoryId == 0) {
                 InventoryItem^ lastItem = inventoryList[inventoryList->Count - 1];
                 int newId = lastItem->InventoryId + 1;  // Assuming 'ID' is a public property of 'item'
 
                 inventoryList->Add(gcnew InventoryItem(newId, description, quantity));
             }
+            //update record if inventoryId exists
             else {
                 for each (InventoryItem ^ item in inventoryList)
                 {
@@ -287,5 +295,6 @@ namespace InventoryManagementBST {
             PopulateGridView();
             MessageBox::Show("Inventory deleted successfully!");
         }
+#pragma endregion
     };
 }
