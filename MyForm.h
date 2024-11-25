@@ -61,56 +61,21 @@ namespace InventoryManagementBST {
 
             void Insert(InventoryItem^ item)
             {
-                Root = InsertIter(Root, item);
+                Root = InsertRec(Root, item);
             }
 
-            //insert new item //hit stack overflow issues when using 10000 record
-            //BSTNode^ InsertRec(BSTNode^ root, InventoryItem^ item)
-            //{
-            //    //if no root
-            //    if (root == nullptr)
-            //        return gcnew BSTNode(item);
-
-            //    //find the inserted invId
-            //    if (item->InventoryId < root->Item->InventoryId)
-            //        root->Left = InsertRec(root->Left, item);
-            //    else if (item->InventoryId > root->Item->InventoryId)
-            //        root->Right = InsertRec(root->Right, item);
-
-            //    return root;
-            //}
-
-            //new insert to prevent iterative issue  avoids recursion and prevents stack overflow issues
-            BSTNode^ InsertIter(BSTNode^ root, InventoryItem^ item)
+            //insert new item
+            BSTNode^ InsertRec(BSTNode^ root, InventoryItem^ item)
             {
-                // If the tree is empty, return a new node
+                //if no root
                 if (root == nullptr)
                     return gcnew BSTNode(item);
 
-                BSTNode^ current = root;
-                BSTNode^ parent = nullptr;
-
-                // Traverse the tree iteratively
-                while (current != nullptr)
-                {
-                    parent = current;
-
-                    // If the item to insert has a smaller InventoryId, go to the left subtree
-                    if (item->InventoryId < current->Item->InventoryId)
-                        current = current->Left;
-                    // If the item to insert has a larger InventoryId, go to the right subtree
-                    else if (item->InventoryId > current->Item->InventoryId)
-                        current = current->Right;
-                    // If the item already exists, we do nothing (or could handle duplicates)
-                    else
-                        return root;
-                }
-
-                // Now we have found the appropriate position for insertion
-                if (item->InventoryId < parent->Item->InventoryId)
-                    parent->Left = gcnew BSTNode(item);
-                else
-                    parent->Right = gcnew BSTNode(item);
+                //find the inserted invId
+                if (item->InventoryId < root->Item->InventoryId)
+                    root->Left = InsertRec(root->Left, item);
+                else if (item->InventoryId > root->Item->InventoryId)
+                    root->Right = InsertRec(root->Right, item);
 
                 return root;
             }
@@ -137,134 +102,43 @@ namespace InventoryManagementBST {
 
             void Delete(int id)
             {
-                Root = DeleteIter(Root, id);
+                Root = DeleteRec(Root, id);
             }
 
             //delete from BST
-            //BSTNode^ DeleteRec(BSTNode^ root, int id)
-            //{
-            //    if (root == nullptr) return root;
-
-            //    //find the node
-            //    if (id < root->Item->InventoryId)
-            //        root->Left = DeleteRec(root->Left, id);
-            //    else if (id > root->Item->InventoryId)
-            //        root->Right = DeleteRec(root->Right, id);
-            //    //node is found
-            //    else
-            //    {
-            //        //if only one child node is found
-            //        if (root->Left == nullptr)
-            //        {
-            //            BSTNode^ temp = root->Right;
-            //            delete root;
-            //            return temp;
-            //        }
-            //        else if (root->Right == nullptr)
-            //        {
-            //            BSTNode^ temp = root->Left;
-            //            delete root;
-            //            return temp;
-            //        }
-
-            //        //if 2 child node, take smallest value in right subtree
-            //        BSTNode^ temp = MinValueNode(root->Right);
-            //        root->Item = temp->Item;
-            //        root->Right = DeleteRec(root->Right, temp->Item->InventoryId);
-            //    }
-            //    return root;
-            //}
-
-            BSTNode^ DeleteIter(BSTNode^ root, int id)
+            BSTNode^ DeleteRec(BSTNode^ root, int id)
             {
-                BSTNode^ parent = nullptr;
-                BSTNode^ current = root;
+                if (root == nullptr) return root;
 
-                while (current != nullptr)
+                //find the node
+                if (id < root->Item->InventoryId)
+                    root->Left = DeleteRec(root->Left, id);
+                else if (id > root->Item->InventoryId)
+                    root->Right = DeleteRec(root->Right, id);
+                //node is found
+                else
                 {
-                    if (id < current->Item->InventoryId)
+                    //if only one child node is found
+                    if (root->Left == nullptr)
                     {
-                        parent = current;
-                        current = current->Left;
+                        BSTNode^ temp = root->Right;
+                        delete root;
+                        return temp;
                     }
-                    else if (id > current->Item->InventoryId)
+                    else if (root->Right == nullptr)
                     {
-                        parent = current;
-                        current = current->Right;
+                        BSTNode^ temp = root->Left;
+                        delete root;
+                        return temp;
                     }
-                    else
-                    {
-                        // Node found
-                        // Case 1: Node has no children (leaf node)
-                        if (current->Left == nullptr && current->Right == nullptr)
-                        {
-                            if (parent == nullptr)
-                            {
-                                root = nullptr;  // if root node is to be deleted
-                            }
-                            else if (parent->Left == current)
-                            {
-                                parent->Left = nullptr;
-                            }
-                            else
-                            {
-                                parent->Right = nullptr;
-                            }
-                            delete current;
-                            return root;
-                        }
-                        // Case 2: Node has one child
-                        else if (current->Left == nullptr || current->Right == nullptr)
-                        {
-                            BSTNode^ temp = (current->Left != nullptr) ? current->Left : current->Right;
-                            if (parent == nullptr)
-                            {
-                                root = temp;  // if root node is to be deleted
-                            }
-                            else if (parent->Left == current)
-                            {
-                                parent->Left = temp;
-                            }
-                            else
-                            {
-                                parent->Right = temp;
-                            }
-                            delete current;
-                            return root;
-                        }
-                        // Case 3: Node has two children
-                        else
-                        {
-                            // Find the smallest node in the right subtree
-                            BSTNode^ tempParent = current;
-                            BSTNode^ temp = current->Right;
-                            while (temp->Left != nullptr)
-                            {
-                                tempParent = temp;
-                                temp = temp->Left;
-                            }
 
-                            // Replace current node with temp
-                            current->Item = temp->Item;
-
-                            // Delete the inorder successor (which is the node we replaced with)
-                            if (tempParent->Left == temp)
-                            {
-                                tempParent->Left = temp->Right;
-                            }
-                            else
-                            {
-                                tempParent->Right = temp->Right;
-                            }
-                            delete temp;
-                            return root;
-                        }
-                    }
+                    //if 2 child node, take smallest value in right subtree
+                    BSTNode^ temp = MinValueNode(root->Right);
+                    root->Item = temp->Item;
+                    root->Right = DeleteRec(root->Right, temp->Item->InventoryId);
                 }
-
-                return root;  // return unchanged root if item not found
+                return root;
             }
-
 
             //find the right subtree smallest node (in-order successor)
             BSTNode^ MinValueNode(BSTNode^ node)
@@ -305,22 +179,12 @@ namespace InventoryManagementBST {
         System::Windows::Forms::DataGridView^ inventoryGridView;
 
         System::ComponentModel::Container^ components;
-private: System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn1;
-private: System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn2;
-private: System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn3;
-private: System::Windows::Forms::DataGridViewButtonColumn^ Action;
-private: System::Windows::Forms::DataGridViewButtonColumn^ Delete;
-private: System::Windows::Forms::Label^ label1;
-
-
-
-
-
-
-
-
-
-
+        System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn1;
+        System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn2;
+        System::Windows::Forms::DataGridViewTextBoxColumn^ dataGridViewTextBoxColumn3;
+        System::Windows::Forms::DataGridViewButtonColumn^ Action;
+        System::Windows::Forms::DataGridViewButtonColumn^ Delete;
+        System::Windows::Forms::Label^ label1;
 
         // Local inventory data (BST)
         InventoryBST^ inventoryBST = gcnew InventoryBST();
@@ -434,7 +298,7 @@ private: System::Windows::Forms::Label^ label1;
         // Load data from JSON file into BST
         void LoadDataFromJson()
         {
-            std::ifstream file("100inventory.json");
+            std::ifstream file("inventory.json");
             if (!file.is_open())
             {
                 MessageBox::Show("Unable to open JSON file.");
