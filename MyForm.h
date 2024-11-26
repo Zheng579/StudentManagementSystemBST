@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <random>
 
 namespace InventoryManagementBST {
 
@@ -149,7 +150,7 @@ namespace InventoryManagementBST {
                 return current;
             }
 
-            //Retrieve All the data (process left subtree then right subtree)
+            //retrieve all data (process left subtree then right subtree)
             void InOrderTraversal(BSTNode^ node, System::Collections::Generic::List<InventoryItem^>^% items)
             {
                 if (node != nullptr)
@@ -286,6 +287,7 @@ namespace InventoryManagementBST {
             this->Controls->Add(this->inventoryGridView);
             this->Name = L"MyForm";
             this->Text = L"Inventory Management";
+            this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
             (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->inventoryGridView))->EndInit();
             this->ResumeLayout(false);
             this->PerformLayout();
@@ -413,39 +415,46 @@ namespace InventoryManagementBST {
         // Update inventory data in the BST
         void UpdateInventoryData(int inventoryId, String^ description, int quantity)
         {
-            System::Diagnostics::Stopwatch^ stopwatch = System::Diagnostics::Stopwatch::StartNew();
             // Check if inventoryId is 0, in which case we perform an insert
             if (inventoryId == 0)
             {
-                // Find the maximum inventoryId in the BST
-                int maxInventoryId = FindMaxInventoryId(inventoryBST->Root);
-
                 // Generate a new inventoryId as maxInventoryId + 1
-                inventoryId = maxInventoryId + 1;
+                // Random number generation
+                std::random_device rd;
+                std::mt19937 gen(rd());
+                std::uniform_int_distribution<> distrib(1000000, 9999999); // 7-digit range
+
+                // Generate a random number
+                int randomNumber = distrib(gen);
+                inventoryId = randomNumber;
 
                 // Create a new InventoryItem with the new inventoryId
                 InventoryItem^ newItem = gcnew InventoryItem(inventoryId, description, quantity);
 
+                System::Diagnostics::Stopwatch^ stopwatch = System::Diagnostics::Stopwatch::StartNew();
                 // Insert the new item into the BST
                 inventoryBST->Insert(newItem);
 
                 stopwatch->Stop();
                 String^ elapsedTime = String::Format("Insert Operation completed in {0} ticks (1 milliseconds = 1000 ticks).", stopwatch->ElapsedTicks);
 
-                MessageBox::Show("New inventory item inserted successfully!\n" + elapsedTime);
+                MessageBox::Show("New inventory item ( id: "+ inventoryId +") inserted successfully!\n" + elapsedTime);
                 PopulateGridView();
             }
             else {
+                System::Diagnostics::Stopwatch^ stopwatch = System::Diagnostics::Stopwatch::StartNew();
+
                 InventoryItem^ item = inventoryBST->Search(inventoryId);
                 if (item != nullptr)
                 {
+
                     item->Description = description;
                     item->Quantity = quantity;
 
                     stopwatch->Stop();
                     String^ elapsedTime = String::Format("Update Operation completed in {0} ticks (1 milliseconds = 1000 ticks).", stopwatch->ElapsedTicks);
 
-                    MessageBox::Show("Inventory updated successfully!\n" + elapsedTime);
+                    MessageBox::Show("Inventory (id: "+ inventoryId +") updated successfully!\n" + elapsedTime);
                     PopulateGridView();
                 }
                 else
@@ -459,27 +468,18 @@ namespace InventoryManagementBST {
         // Delete inventory data from the BST
         void DeleteInventoryData(int inventoryId)
         {
-            inventoryBST->Delete(inventoryId);
-            PopulateGridView();
-            MessageBox::Show("Inventory deleted successfully!");
-        }
-#pragma endregion
+            System::Diagnostics::Stopwatch^ stopwatch = System::Diagnostics::Stopwatch::StartNew();
 
-#pragma region Helper
-        // Helper function to find the maximum inventoryId in the BST
-        int FindMaxInventoryId(BSTNode^ node)
-        {
-            // Traverse to the rightmost node to find the maximum inventoryId
-            if (node == nullptr)
-            {
-                return 0;  // Return 0 if the tree is empty
-            }
-            while (node->Right != nullptr)
-            {
-                node = node->Right;
-            }
-            return node->Item->InventoryId;  // Return the inventoryId of the rightmost node
+            inventoryBST->Delete(inventoryId);
+
+            stopwatch->Stop();
+            String^ elapsedTime = String::Format("Delete Operation completed in {0} ticks (1 milliseconds = 1000 ticks).", stopwatch->ElapsedTicks);
+
+            MessageBox::Show("Inventory (id: "+ inventoryId +") deleted successfully!\n" + elapsedTime);
+            PopulateGridView();
         }
 #pragma endregion
+private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e) {
+}
 };
 }
