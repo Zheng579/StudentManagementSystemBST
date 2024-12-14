@@ -33,7 +33,18 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="inventory.json" />
     <None Include="packages.config" />
+    <None Include="inventory10.json">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="inventory100.json">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="inventory1000.json">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="inventory10000.json">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

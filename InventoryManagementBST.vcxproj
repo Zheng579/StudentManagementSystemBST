@@ -24,8 +24,9 @@
     <EnableManagedPackageReferenceSupport>true</EnableManagedPackageReferenceSupport>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
-    <RootNamespace>InventoryManagementBST</RootNamespace>
+    <RootNamespace>StudentManagementSystemBST</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>StudentManagementSystemBST</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -138,7 +139,10 @@
     <ResourceCompile Include="InventoryManagementBST.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="inventory.json" />
+    <None Include="inventory10.json" />
+    <None Include="inventory100.json" />
+    <None Include="inventory1000.json" />
+    <None Include="inventory10000.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

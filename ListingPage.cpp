@@ -7,7 +7,7 @@ using namespace System::Windows::Forms;
 void main(array<String^>^ args) { 
 	Application::SetCompatibleTextRenderingDefault(false);
 	Application::EnableVisualStyles();
-	InventoryManagementBST::MyForm frm;
+    StudentManagementSystemBST::MyForm frm;
 	Application::Run(% frm);
 	
 }
